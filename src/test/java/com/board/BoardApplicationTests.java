@@ -1,10 +1,9 @@
 package com.board;
 
+import com.board.testSupport.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class BoardApplicationTests {
+class BoardApplicationTests extends AbstractIntegrationTest {
 
     @Test
     void contextLoads() {
