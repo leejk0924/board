@@ -1,5 +1,6 @@
 package com.board.post;
 
+import com.board.comment.CommentRepository;
 import com.board.global.common.PageResponse;
 import com.board.global.exception.ForbiddenException;
 import com.board.global.exception.NotFoundException;
@@ -18,6 +19,7 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final MemberRepository memberRepository;
+    private final CommentRepository commentRepository;
 
     @Transactional
     public PostResponse create(Long memberId, PostCreateRequest request) {
@@ -56,7 +58,8 @@ public class PostService {
     public void delete(Long postId, Long memberId) {
         Post post = getPostOrThrow(postId);
         validateOwner(post, memberId);
-        postRepository.delete(post);
+        commentRepository.deleteAllByPostId(postId);
+        postRepository.deleteById(postId);
     }
 
     private Post getPostOrThrow(Long postId) {
