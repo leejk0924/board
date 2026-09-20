@@ -57,34 +57,50 @@ docker compose up -d mysql
 - Refresh Token은 과제 범위를 벗어난다고 판단해 구현하지 않았습니다(Access Token 만료 시 재로그인).
 - `JwtAuthenticationFilter`가 매 요청마다 토큰을 검증해 `SecurityContext`에 인증 정보를 채우고, 인증이 필요 없는 경로(`GET /api/posts/**`, `POST /api/auth/**`)는 `SecurityConfig`에서 `permitAll()` 처리했습니다.
 
-### 2. 엔티티 관계
+### 2. 아키텍처: 헥사고날(포트 & 어댑터)
+
+`member`, `post`, `comment` 세 개의 모듈로 나누고, 각 모듈을 domain / application / adapter 3계층으로 구성했습니다.
 
 ```
-Member (1) ── (N) Post
-Member (1) ── (N) Comment
-Post   (1) ── (N) Comment
-Comment(1) ── (N) Comment   (parent, 자기참조 - 대댓글 1단계)
+<module>/
+├── domain/                 순수 자바 객체. JPA·Spring 의존성 없음 (Member, Post, Comment)
+├── application/
+│   ├── port/in/             유스케이스 인터페이스 (예: CreatePostUseCase) + Command/Result
+│   ├── port/out/             바깥 세계에 필요한 기능의 인터페이스 (Repository, QueryRepository, LookupPort 등)
+│   ├── service/               유스케이스 구현체. port에만 의존하고 프레임워크를 모른다
+│   └── exception/              모듈별 ErrorCode enum
+└── adapter/
+    ├── in/web/               Controller + 요청/응답 DTO (port.in 호출)
+    └── out/persistence/       JPA Entity + Spring Data Repository + Mapper + port.out 구현체
 ```
 
-- `Member`: `email`(unique), `password`(BCrypt 해시), `nickname`, `createdAt`
-- `Post`: `title`, `content`, `member`(작성자, LAZY), `createdAt`/`updatedAt`(JPA Auditing)
-- `Comment`: `content`, `post`, `member`(작성자), `parent`(자기참조, nullable), `createdAt`/`updatedAt`
-- 대댓글은 `parent`가 이미 대댓글(`parent.parent != null`)인 경우 서비스 계층에서 400으로 거절해 1단계로 제한합니다.
-- 요청/응답에는 JPA 엔티티를 직접 노출하지 않고 record 기반 DTO(`SignUpRequest`, `PostResponse`, `CommentResponse` 등)만 사용합니다. 비밀번호 필드는 어떤 응답 DTO에도 포함하지 않습니다.
+- **도메인은 JPA를 모른다**: `Post`, `Comment`, `Member`는 순수 POJO이며 `@Entity`가 아닙니다. 영속성은 `adapter/out/persistence`의 별도 `*JpaEntity` 클래스가 담당하고, `*PersistenceMapper`가 도메인 ↔ 엔티티를 변환합니다.
+- **모듈 간 의존은 포트로만**: 예를 들어 댓글을 작성하려면 게시글이 존재해야 하는데, `comment` 모듈은 `post` 모듈의 내부 구현을 직접 참조하지 않고 자신이 정의한 `comment.application.port.out.PostLookupPort`만 바라봅니다. 이 포트의 실제 구현(`PostDirectoryAdapter`)은 `post` 모듈의 어댑터 계층에 있습니다. 반대로 게시글 삭제 시 댓글을 정리해야 하는 `post` 모듈은 자신의 `CommentCleanupPort`를 정의하고, `comment` 모듈이 그 구현체(`CommentCleanupAdapter`)를 제공합니다. 닉네임 조회(`MemberLookupPort`)도 동일한 패턴입니다.
+- **집계(N+1) 조회는 별도 Query 포트로 분리**: 단건 CRUD용 `PostRepository`(command)와, 화면에 필요한 조인/집계 결과를 그대로 돌려주는 `PostQueryRepository`(read)를 분리했습니다. 자세한 내용은 아래 3번 항목 참고.
+- 엔티티 관계: `Member (1)─(N) Post`, `Member (1)─(N) Comment`, `Post (1)─(N) Comment`, `Comment (1)─(N) Comment`(자기참조, 대댓글 1단계). 단, 영속성 엔티티는 `@ManyToOne` 객체 참조 대신 `memberId`/`postId`/`parentId` 같은 순수 FK 컬럼만 가집니다(각 애그리거트가 다른 애그리거트를 id로만 참조).
+- 요청/응답에는 JPA 엔티티는 물론 도메인 객체도 직접 노출하지 않습니다. 웹 어댑터는 `port.in`이 정의한 Command/Result만 주고받고, 그 결과를 다시 `*Response` record로 변환해서 클라이언트에 내려줍니다. 비밀번호 필드는 어떤 응답에도 포함되지 않습니다.
 
 ### 3. N+1 문제를 막은 방법
 
-- **게시글 목록**: `PostRepository.search()`가 `Post`, `Member`, `Comment`를 한 번의 JPQL로 조인해 작성자 닉네임과 댓글 수(`COUNT`)까지 집계한 뒤 `PostSummaryResponse` DTO로 바로 매핑합니다. `GROUP BY` 쿼리라 Spring Data의 기본 count 추정이 불가능하므로 `countQuery`를 별도로 명시했습니다. 목록에 게시글이 몇 개든 이 쿼리 1번 + count 쿼리 1번, 총 2번으로 끝납니다.
-- **게시글 상세**: `@EntityGraph(attributePaths = "member")`로 작성자를 fetch join하여 상세 조회 1번으로 처리합니다.
-- **댓글 목록**: `CommentRepository.findAllByPostIdWithMember()`가 `JOIN FETCH c.member`로 댓글 작성자를 한 번에 가져옵니다. 대댓글의 `parentId`는 프록시의 식별자만 읽으므로 추가 쿼리가 발생하지 않습니다.
+- **게시글 목록**: `PostQueryRepository.search()` (구현: `PostQueryRepositoryAdapter` → `PostJpaRepository.search()`)가 `post`, `member`, `comment` 테이블을 한 번의 JPQL로 조인해 작성자 닉네임과 댓글 수(`COUNT`)까지 집계한 뒤 `PostSummaryView`로 바로 매핑합니다. `GROUP BY` 쿼리라 Spring Data의 기본 count 추정이 불가능하므로 `countQuery`를 별도로 명시했습니다. 목록에 게시글이 몇 개든 이 쿼리 1번 + count 쿼리 1번, 총 2번으로 끝납니다.
+- **게시글 상세**: `PostQueryRepository.findDetailById()`가 `post`+`member`를 조인하는 단일 JPQL로 작성자 닉네임까지 한 번에 가져옵니다.
+- **댓글 목록**: `CommentQueryRepository.findAllByPostIdWithAuthor()`가 `comment`+`member`를 조인해 댓글 작성자를 한 번에 가져옵니다. 대댓글의 `parentId`는 컬럼값 그대로이므로(객체 참조가 아니라 Long) 추가 쿼리가 발생하지 않습니다.
+- 영속성 엔티티 간에는 `@ManyToOne`/`@OneToMany` 객체 연관관계를 전혀 쓰지 않고 FK 컬럼(Long)만 두었기 때문에, 지연 로딩 프록시로 인한 의도치 않은 추가 쿼리 자체가 구조적으로 발생하지 않습니다. 화면에 필요한 조인은 모두 위처럼 명시적인 Query 포트/어댑터에서 처리합니다.
 
 ### 4. 게시글 삭제 시 댓글 처리 방식
 
 - **정책: 게시글을 삭제하면 딸린 댓글(대댓글 포함)도 함께 삭제됩니다.**
-- 구현: `PostService.delete()`에서 `CommentRepository.deleteAllByPostId()`(벌크 JPQL `DELETE`, `clearAutomatically = true`)로 해당 게시글의 댓글을 먼저 모두 삭제한 뒤 게시글을 삭제합니다.
+- 구현: `PostService.deletePost()`가 `post.application.port.out.CommentCleanupPort`를 호출해 해당 게시글의 댓글을 먼저 모두 삭제한 뒤 게시글을 삭제합니다. 이 포트의 구현체(`comment` 모듈의 `CommentCleanupAdapter`)는 벌크 JPQL `DELETE`(`clearAutomatically = true`)로 댓글을 한 번에 제거합니다.
 - 추가로 DB 스키마(`comment.post_id`, `comment.parent_id` FK)에도 `ON DELETE CASCADE`를 걸어, 애플리케이션 코드를 거치지 않는 경로(직접 SQL 등)로 게시글/댓글이 삭제되더라도 참조 무결성이 깨지지 않도록 이중으로 방어했습니다.
 
-### 5. API 설계 원칙
+### 5. 오류 처리: ErrorCode + RestApiException
+
+- `global.exception.ErrorCode` 인터페이스(`statusCode()`, `getMessage()`)를 각 모듈의 enum이 구현합니다: `MemberErrorCode`, `PostErrorCode`, `CommentErrorCode`, 그리고 모듈에 속하지 않는 공통 오류를 위한 `CommonErrorCode`.
+- 서비스 계층은 항상 `throw new RestApiException(XxxErrorCode.YYY)` 형태로만 예외를 던집니다. HTTP 상태 코드와 메시지는 enum 상수에 고정되어 있어, 같은 오류가 프로젝트 어디서 발생하든 같은 상태 코드/메시지를 보장합니다.
+- `global.exception.ApiControllerAdvice`(`@RestControllerAdvice`)가 `RestApiException`을 `errorCode.statusCode()` + `ErrorResponse.of(errorCode, path)`로 변환합니다. Bean Validation 실패(`MethodArgumentNotValidException` 등)는 `CommonErrorCode.INVALID_PARAMETER`로, 처리되지 않은 예외는 `CommonErrorCode.INTERNAL_SERVER_ERROR`(500, 로그만 상세히 남기고 클라이언트에는 일반 메시지)로 매핑합니다.
+- 인증/인가 실패(401/403)는 Spring Security 필터 체인에서 발생하므로 `@RestControllerAdvice`를 타지 않습니다. 대신 `CustomAuthenticationEntryPoint`/`CustomAccessDeniedHandler`가 각각 `CommonErrorCode.UNAUTHORIZED`/`ACCESS_DENIED`로 동일한 `ErrorResponse` 포맷을 직접 작성합니다.
+
+### 6. API 설계 원칙
 
 - REST 리소스 중심 경로: `/api/auth/*`(인증), `/api/posts`(게시글), `/api/posts/{postId}/comments`(게시글에 속한 댓글 생성/목록), `/api/comments/{commentId}`(댓글 단건 수정/삭제 — 댓글은 고유 ID로 식별되므로 게시글 경로에 종속시키지 않음).
 - 생성은 `201 Created`, 삭제는 `204 No Content`, 나머지는 `200 OK`.
@@ -103,7 +119,7 @@ Comment(1) ── (N) Comment   (parent, 자기참조 - 대댓글 1단계)
 ```json
 {
   "status": 404,
-  "message": "게시글을 찾을 수 없습니다. id=999999",
+  "message": "게시글을 찾을 수 없습니다.",
   "path": "/api/posts/999999",
   "timestamp": "2026-09-21T01:47:10.098224"
 }
@@ -249,7 +265,7 @@ $ curl -i -X GET http://localhost:8080/api/posts/999999
 HTTP/1.1 404
 Content-Type: application/json
 
-{"status":404,"message":"게시글을 찾을 수 없습니다. id=999999","path":"/api/posts/999999","timestamp":"2026-09-21T01:46:10.764398"}
+{"status":404,"message":"게시글을 찾을 수 없습니다.","path":"/api/posts/999999","timestamp":"2026-09-21T01:46:10.764398"}
 ```
 
 ### 9) 대댓글(1단계) 작성 및 2단계 제한
@@ -280,11 +296,11 @@ HTTP/1.1 204
 
 $ curl -i -X GET http://localhost:8080/api/posts/1
 HTTP/1.1 404
-{"status":404,"message":"게시글을 찾을 수 없습니다. id=1", ...}
+{"status":404,"message":"게시글을 찾을 수 없습니다.", ...}
 
 $ curl -i -X GET http://localhost:8080/api/posts/1/comments
 HTTP/1.1 404
-{"status":404,"message":"게시글을 찾을 수 없습니다. id=1", ...}
+{"status":404,"message":"게시글을 찾을 수 없습니다.", ...}
 ```
 
 ---
@@ -293,7 +309,8 @@ HTTP/1.1 404
 
 - [x] 대댓글(1단계) — 위 예시 참고
 - [x] 제목/본문 검색 — `GET /api/posts?keyword=`
-- [x] 통합 테스트 — `AuthIntegrationTest`(가입/로그인/400/401), `PostCommentIntegrationTest`(401/403/404, 목록 댓글수, 검색, 대댓글 제한, 삭제 cascade)
+- [x] 단위 테스트 — `MemberAuthServiceTest`, `PostServiceTest`, `CommentServiceTest`(각 서비스를 port만 Mockito로 모킹해 Spring 컨텍스트 없이 검증), `PostTest`/`CommentTest`(도메인 객체 단위)
+- [x] 통합 테스트 — `AuthIntegrationTest`(가입/로그인/400/401), `PostCommentIntegrationTest`(401/403/404, 목록 댓글수, 검색, 대댓글 제한, 삭제 cascade) — 둘 다 `com.board.integration` 패키지, Testcontainers MySQL + MockMvc로 실제 HTTP 계약을 검증
 
 ## 참고: Spring Boot 버전 관련 메모
 

@@ -1,9 +1,9 @@
 package com.board.global.security;
 
+import com.board.global.exception.CommonErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
@@ -17,6 +17,6 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
             HttpServletResponse response,
             AuthenticationException authException
     ) throws IOException {
-        ErrorResponseWriter.write(response, HttpStatus.UNAUTHORIZED, "인증이 필요합니다.", request.getRequestURI());
+        ErrorResponseWriter.write(response, CommonErrorCode.UNAUTHORIZED, request.getRequestURI());
     }
 }

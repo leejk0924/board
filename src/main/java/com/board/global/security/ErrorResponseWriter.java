@@ -1,12 +1,12 @@
 package com.board.global.security;
 
+import com.board.global.exception.ErrorCode;
 import com.board.global.exception.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 
 public final class ErrorResponseWriter {
@@ -18,15 +18,10 @@ public final class ErrorResponseWriter {
     private ErrorResponseWriter() {
     }
 
-    public static void write(
-            HttpServletResponse response,
-            HttpStatus status,
-            String message,
-            String path
-    ) throws IOException {
-        response.setStatus(status.value());
+    public static void write(HttpServletResponse response, ErrorCode errorCode, String path) throws IOException {
+        response.setStatus(errorCode.statusCode().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(OBJECT_MAPPER.writeValueAsString(ErrorResponse.of(status, message, path)));
+        response.getWriter().write(OBJECT_MAPPER.writeValueAsString(ErrorResponse.of(errorCode, path)));
     }
 }
