@@ -1,0 +1,76 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '4.1.1'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com'
+version = '0.0.1-SNAPSHOT'
+description = 'board'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    set('testcontainersVersion', "2.0.5")
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.testcontainers:testcontainers-bom:${testcontainersVersion}"
+    }
+}
+
+dependencies {
+    // Spring
+    implementation(
+            'org.springframework.boot:spring-boot-starter-webmvc',
+            'org.springframework.boot:spring-boot-starter-validation',
+            'org.springframework.boot:spring-boot-starter-security',
+            'org.springframework.boot:spring-boot-starter-data-jpa',
+            'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0'
+    )
+
+    // DB
+    implementation 'org.flywaydb:flyway-mysql'
+    runtimeOnly("com.mysql:mysql-connector-j")
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+
+    // Etc
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
+
+    // Test
+    testImplementation(
+            'org.springframework.boot:spring-boot-starter-webmvc-test',
+            'org.springframework.boot:spring-boot-starter-validation-test',
+            'org.springframework.boot:spring-boot-starter-data-jpa-test',
+            'org.springframework.boot:spring-boot-starter-security-test'
+    )
+
+    // testcontainer
+
+    testImplementation (
+            'org.springframework.boot:spring-boot-testcontainers',
+            'org.testcontainers:testcontainers-junit-jupiter',
+            'org.testcontainers:testcontainers-mysql'
+    )
+
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

@@ -1,0 +1,9 @@
+.git/
+.gradle/
+build/
+data/
+.idea/
+.vscode/
+*.iml
+.DS_Store
+HELP.md
