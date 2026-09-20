@@ -1,0 +1,9 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+jwt:
+  secret: test-only-secret-key-used-for-integration-tests-32bytes-min
+  expiration-seconds: 3600

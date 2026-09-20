@@ -28,3 +28,7 @@ spring:
       org.hibernate.orm.jdbc.bind: TRACE
       org.hibernate.orm.jdbc.extract: TRACE
       org.springframework.transaction.interceptor: TRACE
+
+jwt:
+  secret: ${JWT_SECRET:local-development-only-secret-key-please-override-in-production-32bytes+}
+  expiration-seconds: ${JWT_EXPIRATION_SECONDS:3600}
