@@ -1,6 +1,6 @@
 package com.board.member.application.service;
 
-import com.board.global.exception.RestApiException;
+import com.board.common.exception.RestApiException;
 import com.board.member.application.exception.MemberErrorCode;
 import com.board.member.application.port.in.LoginUseCase;
 import com.board.member.application.port.in.SignUpUseCase;

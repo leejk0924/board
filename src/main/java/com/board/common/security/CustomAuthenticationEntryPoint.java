@@ -1,6 +1,6 @@
-package com.board.global.security;
+package com.board.common.security;
 
-import com.board.global.exception.CommonErrorCode;
+import com.board.common.exception.CommonErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;

@@ -1,6 +1,6 @@
-package com.board.global.security.jwt;
+package com.board.common.security.jwt;
 
-import com.board.global.security.AuthenticatedMember;
+import com.board.common.security.AuthenticatedMember;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;

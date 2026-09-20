@@ -1,4 +1,4 @@
-package com.board.global.common;
+package com.board.common;
 
 import java.util.List;
 import org.springframework.data.domain.Page;

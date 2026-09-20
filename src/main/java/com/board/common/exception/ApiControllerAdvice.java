@@ -1,4 +1,4 @@
-package com.board.global.exception;
+package com.board.common.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;

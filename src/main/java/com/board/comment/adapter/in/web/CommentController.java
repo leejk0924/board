@@ -7,7 +7,7 @@ import com.board.comment.application.port.in.DeleteCommentUseCase.DeleteCommentC
 import com.board.comment.application.port.in.GetCommentListUseCase;
 import com.board.comment.application.port.in.UpdateCommentUseCase;
 import com.board.comment.application.port.in.UpdateCommentUseCase.UpdateCommentCommand;
-import com.board.global.security.AuthenticatedMember;
+import com.board.common.security.AuthenticatedMember;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

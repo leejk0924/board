@@ -17,7 +17,7 @@ import com.board.comment.application.port.out.CommentRepository;
 import com.board.comment.application.port.out.MemberLookupPort;
 import com.board.comment.application.port.out.PostLookupPort;
 import com.board.comment.domain.Comment;
-import com.board.global.exception.RestApiException;
+import com.board.common.exception.RestApiException;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

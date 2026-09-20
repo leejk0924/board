@@ -1,7 +1,7 @@
 package com.board.post.adapter.in.web;
 
-import com.board.global.common.PageResponse;
-import com.board.global.security.AuthenticatedMember;
+import com.board.common.PageResponse;
+import com.board.common.security.AuthenticatedMember;
 import com.board.post.application.port.in.CreatePostUseCase;
 import com.board.post.application.port.in.CreatePostUseCase.CreatePostCommand;
 import com.board.post.application.port.in.DeletePostUseCase;

@@ -1,6 +1,6 @@
 package com.board.post.application.exception;
 
-import com.board.global.exception.ErrorCode;
+import com.board.common.exception.ErrorCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

@@ -1,7 +1,7 @@
-package com.board.global.security;
+package com.board.common.security;
 
-import com.board.global.exception.ErrorCode;
-import com.board.global.exception.ErrorResponse;
+import com.board.common.exception.ErrorCode;
+import com.board.common.exception.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;

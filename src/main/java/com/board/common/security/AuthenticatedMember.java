@@ -1,4 +1,4 @@
-package com.board.global.security;
+package com.board.common.security;
 
 public record AuthenticatedMember(Long id, String email) {
 }

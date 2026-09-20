@@ -8,7 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.board.global.exception.RestApiException;
+import com.board.common.exception.RestApiException;
 import com.board.member.application.exception.MemberErrorCode;
 import com.board.member.application.port.in.LoginUseCase.LoginCommand;
 import com.board.member.application.port.in.LoginUseCase.LoginResult;

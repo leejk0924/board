@@ -1,6 +1,6 @@
 package com.board.member.adapter.out.security;
 
-import com.board.global.security.jwt.JwtTokenProvider;
+import com.board.common.security.jwt.JwtTokenProvider;
 import com.board.member.application.port.out.TokenIssuer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

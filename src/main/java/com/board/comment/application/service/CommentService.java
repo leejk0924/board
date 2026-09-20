@@ -12,7 +12,7 @@ import com.board.comment.application.port.out.MemberLookupPort;
 import com.board.comment.application.port.out.PostLookupPort;
 import com.board.comment.application.exception.CommentErrorCode;
 import com.board.comment.domain.Comment;
-import com.board.global.exception.RestApiException;
+import com.board.common.exception.RestApiException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

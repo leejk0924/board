@@ -8,7 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.board.global.exception.RestApiException;
+import com.board.common.exception.RestApiException;
 import com.board.post.application.exception.PostErrorCode;
 import com.board.post.application.port.in.CreatePostUseCase.CreatePostCommand;
 import com.board.post.application.port.in.DeletePostUseCase.DeletePostCommand;

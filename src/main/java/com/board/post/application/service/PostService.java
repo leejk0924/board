@@ -1,6 +1,6 @@
 package com.board.post.application.service;
 
-import com.board.global.exception.RestApiException;
+import com.board.common.exception.RestApiException;
 import com.board.post.application.exception.PostErrorCode;
 import com.board.post.application.port.in.CreatePostUseCase;
 import com.board.post.application.port.in.DeletePostUseCase;

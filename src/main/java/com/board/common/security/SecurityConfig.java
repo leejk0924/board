@@ -1,7 +1,7 @@
-package com.board.global.security;
+package com.board.common.security;
 
-import com.board.global.security.jwt.JwtAuthenticationFilter;
-import com.board.global.security.jwt.JwtTokenProvider;
+import com.board.common.security.jwt.JwtAuthenticationFilter;
+import com.board.common.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

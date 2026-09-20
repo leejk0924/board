@@ -1,4 +1,4 @@
-package com.board.global.exception;
+package com.board.common.exception;
 
 import java.time.LocalDateTime;
 import org.springframework.http.HttpStatus;
