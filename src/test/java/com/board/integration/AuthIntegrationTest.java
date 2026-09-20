@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.board.member.adapter.in.web.LoginRequest;
 import com.board.member.adapter.in.web.LoginResponse;
+import com.board.member.adapter.in.web.ReissueRequest;
 import com.board.member.adapter.in.web.SignUpRequest;
 import com.board.testSupport.AbstractIntegrationTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -73,7 +74,7 @@ class AuthIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("가입한 이메일/비밀번호로 로그인하면 액세스 토큰을 발급한다")
+    @DisplayName("가입한 이메일/비밀번호로 로그인하면 액세스 토큰과 리프레시 토큰을 발급한다")
     void login_success() throws Exception {
         String signUpBody = objectMapper.writeValueAsString(new SignUpRequest("login@example.com", "password123", "로그인유저"));
         mockMvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON).content(signUpBody))
@@ -83,11 +84,13 @@ class AuthIntegrationTest extends AbstractIntegrationTest {
         MvcResult result = mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(loginBody))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").exists())
+                .andExpect(jsonPath("$.refreshToken").exists())
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
                 .andReturn();
 
         LoginResponse response = objectMapper.readValue(result.getResponse().getContentAsString(), LoginResponse.class);
         assertThat(response.accessToken()).isNotBlank();
+        assertThat(response.refreshToken()).isNotBlank();
     }
 
     @Test
@@ -100,5 +103,46 @@ class AuthIntegrationTest extends AbstractIntegrationTest {
         String loginBody = objectMapper.writeValueAsString(new LoginRequest("wrongpw@example.com", "wrong-password"));
         mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(loginBody))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("유효한 리프레시 토큰으로 재요청하면 새 액세스/리프레시 토큰을 발급한다(로테이션)")
+    void reissue_success() throws Exception {
+        String signUpBody = objectMapper.writeValueAsString(new SignUpRequest("reissue@example.com", "password123", "재발급유저"));
+        mockMvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON).content(signUpBody))
+                .andExpect(status().isCreated());
+
+        String loginBody = objectMapper.writeValueAsString(new LoginRequest("reissue@example.com", "password123"));
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(loginBody))
+                .andExpect(status().isOk())
+                .andReturn();
+        LoginResponse loginResponse = objectMapper.readValue(loginResult.getResponse().getContentAsString(), LoginResponse.class);
+
+        String reissueBody = objectMapper.writeValueAsString(new ReissueRequest(loginResponse.refreshToken()));
+        MvcResult reissueResult = mockMvc.perform(post("/api/auth/reissue").contentType(MediaType.APPLICATION_JSON).content(reissueBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").exists())
+                .andExpect(jsonPath("$.refreshToken").exists())
+                .andReturn();
+        LoginResponse reissueResponse = objectMapper.readValue(reissueResult.getResponse().getContentAsString(), LoginResponse.class);
+
+        // 리프레시 토큰은 매번 새로 발급되는 랜덤 값이라 로그인 때와 달라야 한다(로테이션).
+        // 액세스 토큰은 클레임(iat/exp)이 초 단위라 같은 초 안에 재발급되면 우연히 같을 수 있어 비교하지 않는다.
+        assertThat(reissueResponse.refreshToken()).isNotEqualTo(loginResponse.refreshToken());
+
+        // 로테이션되었으므로 예전 리프레시 토큰은 더 이상 사용할 수 없다
+        String staleReissueBody = objectMapper.writeValueAsString(new ReissueRequest(loginResponse.refreshToken()));
+        mockMvc.perform(post("/api/auth/reissue").contentType(MediaType.APPLICATION_JSON).content(staleReissueBody))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 리프레시 토큰으로 재발급을 요청하면 401을 반환한다")
+    void reissue_invalidToken_returns401() throws Exception {
+        String body = objectMapper.writeValueAsString(new ReissueRequest("no-such-refresh-token"));
+
+        mockMvc.perform(post("/api/auth/reissue").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401));
     }
 }

@@ -7,6 +7,6 @@ public interface LoginUseCase {
     record LoginCommand(String email, String rawPassword) {
     }
 
-    record LoginResult(String accessToken, String tokenType, long expiresIn) {
+    record LoginResult(String accessToken, String refreshToken, String tokenType, long expiresIn) {
     }
 }

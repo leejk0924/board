@@ -45,6 +45,7 @@ docker compose up -d mysql
 |---|---|---|
 | `JWT_SECRET` | JWT 서명 키 (운영 환경에서는 반드시 교체) | 로컬 개발용 기본값 내장 |
 | `JWT_EXPIRATION_SECONDS` | Access Token 만료 시간(초) | `3600` |
+| `JWT_REFRESH_EXPIRATION_SECONDS` | Refresh Token 만료 시간(초) | `1209600`(14일) |
 
 ---
 
@@ -53,9 +54,11 @@ docker compose up -d mysql
 ### 1. 로그인 방식: JWT를 선택한 이유
 
 - 이 프로젝트는 서버 렌더링 없는 순수 REST API이며, 프론트엔드/모바일 등 다양한 클라이언트가 붙을 수 있다고 가정했습니다. 세션은 서버가 상태를 들고 있어야 하고 스케일아웃 시 세션 클러스터링/스토리지 공유가 필요하지만, JWT는 서버가 무상태(stateless)로 동작할 수 있어 REST API에 더 적합하다고 판단했습니다.
-- 로그인 성공 시 Access Token(HS512, 기본 1시간 만료)을 발급하고, 클라이언트는 이후 요청에 `Authorization: Bearer <token>` 헤더를 실어 보냅니다.
-- Refresh Token은 과제 범위를 벗어난다고 판단해 구현하지 않았습니다(Access Token 만료 시 재로그인).
-- `JwtAuthenticationFilter`가 매 요청마다 토큰을 검증해 `SecurityContext`에 인증 정보를 채우고, 인증이 필요 없는 경로(`GET /api/posts/**`, `POST /api/auth/**`)는 `SecurityConfig`에서 `permitAll()` 처리했습니다.
+- 로그인 성공 시 Access Token(JWT, HS512, 기본 1시간 만료)과 Refresh Token(랜덤 opaque 문자열, 기본 14일 만료)을 함께 발급하고, 클라이언트는 이후 요청에 `Authorization: Bearer <accessToken>` 헤더를 실어 보냅니다.
+- **Refresh Token**: Access Token은 JWT라 서버가 검증만 하면 되지만(자체 완결적), 탈취 시 만료 전까지 무효화할 방법이 없습니다. 그래서 Refresh Token은 JWT가 아니라 `member.adapter.out.security.JwtTokenIssuerAdapter`가 `SecureRandom`으로 생성한 opaque 문자열로 만들고, DB(`refresh_token` 테이블, 회원당 1개)에 저장해 서버가 직접 유효성/폐기 여부를 관리합니다.
+  - `POST /api/auth/reissue`에 `{ "refreshToken" }`을 보내면 DB에서 조회해 만료 여부를 확인하고, **재발급할 때마다 Access Token과 Refresh Token을 모두 새로 발급(로테이션)**하면서 기존 Refresh Token 행을 덮어씁니다. 그래서 한 번 사용된 Refresh Token은 즉시 무효화되어 재사용할 수 없습니다(탈취된 토큰이 재사용될 때 감지하기 쉬운 구조).
+  - Access Token이 만료되어도 클라이언트는 재로그인 없이 Refresh Token으로 새 Access Token을 받아올 수 있습니다. Refresh Token 자체가 만료/유효하지 않으면 401과 함께 재로그인을 유도합니다.
+- `JwtAuthenticationFilter`가 매 요청마다 Access Token을 검증해 `SecurityContext`에 인증 정보를 채우고, 인증이 필요 없는 경로(`GET /api/posts/**`, `POST /api/auth/**`)는 `SecurityConfig`에서 `permitAll()` 처리했습니다.
 
 ### 2. 아키텍처: 헥사고날(포트 & 어댑터)
 
@@ -130,7 +133,11 @@ docker compose up -d mysql
 | 메서드 | 경로 | 인증 | 요청 본문 | 응답 (성공) | 상태 코드 |
 |---|---|---|---|---|---|
 | POST | `/api/auth/signup` | 불필요 | `{ "email", "password", "nickname" }` | `{ "id", "email", "nickname", "createdAt" }` | 201 / 400(이메일 형식·중복, 비밀번호 8자 미만) |
-| POST | `/api/auth/login` | 불필요 | `{ "email", "password" }` | `{ "accessToken", "tokenType", "expiresIn" }` | 200 / 401(이메일 또는 비밀번호 불일치) |
+| POST | `/api/auth/login` | 불필요 | `{ "email", "password" }` | `{ "accessToken", "refreshToken", "tokenType", "expiresIn" }` | 200 / 401(이메일 또는 비밀번호 불일치) |
+| POST | `/api/auth/reissue` | 불필요(Refresh Token을 본문으로 전달) | `{ "refreshToken" }` | `{ "accessToken", "refreshToken", "tokenType", "expiresIn" }` | 200 / 401(유효하지 않거나 만료된 Refresh Token) |
+
+- `expiresIn`은 Access Token의 만료 시간(초)입니다.
+- `/api/auth/reissue`는 호출할 때마다 Access Token과 Refresh Token을 **모두** 새로 발급합니다(로테이션). 응답으로 받은 새 `refreshToken`으로 갱신해서 보관해야 하며, 이전 Refresh Token은 즉시 무효화됩니다.
 
 ### 게시글
 
@@ -188,7 +195,28 @@ $ curl -i -X POST http://localhost:8080/api/auth/login \
 HTTP/1.1 200
 Content-Type: application/json
 
-{"accessToken":"eyJhbGciOiJIUzUxMiJ9...","tokenType":"Bearer","expiresIn":3600}
+{"accessToken":"eyJhbGciOiJIUzUxMiJ9...","refreshToken":"HARrnlcvk-H5i-jLQfBQ5FurtZIZF8H3H0cTFXPltVHy2Z7i19W1J25vu9un8YIQDpgfBLzuqAt-6oDWdZB3TA","tokenType":"Bearer","expiresIn":3600}
+```
+
+### 2-1) Access Token 재발급 (Refresh Token 로테이션)
+
+```
+$ curl -i -X POST http://localhost:8080/api/auth/reissue \
+  -H "Content-Type: application/json" \
+  -d '{"refreshToken":"HARrnlcvk-H5i-jLQfBQ5FurtZIZF8H3H0cTFXPltVHy2Z7i19W1J25vu9un8YIQDpgfBLzuqAt-6oDWdZB3TA"}'
+
+HTTP/1.1 200
+Content-Type: application/json
+
+{"accessToken":"eyJhbGciOiJIUzUxMiJ9...(새 토큰)","refreshToken":"lyuXO-VTD5zI1wiIz0TInMc5V1SRtLSvlx3-SP3xhMddL-_QznZ-5AL_gkPOd4aOOoTyWPGcVJYxWfC6pk5zog","tokenType":"Bearer","expiresIn":3600}
+
+# 방금 사용한(로테이션되어 무효화된) 예전 refreshToken으로 다시 요청하면 401
+$ curl -i -X POST http://localhost:8080/api/auth/reissue \
+  -H "Content-Type: application/json" \
+  -d '{"refreshToken":"HARrnlcvk-H5i-jLQfBQ5FurtZIZF8H3H0cTFXPltVHy2Z7i19W1J25vu9un8YIQDpgfBLzuqAt-6oDWdZB3TA"}'
+
+HTTP/1.1 401
+{"status":401,"message":"유효하지 않거나 만료된 리프레시 토큰입니다.","path":"/api/auth/reissue", ...}
 ```
 
 ### 3) 게시글 작성

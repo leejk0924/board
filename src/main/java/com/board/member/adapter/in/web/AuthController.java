@@ -2,6 +2,8 @@ package com.board.member.adapter.in.web;
 
 import com.board.member.application.port.in.LoginUseCase;
 import com.board.member.application.port.in.LoginUseCase.LoginCommand;
+import com.board.member.application.port.in.ReissueTokenUseCase;
+import com.board.member.application.port.in.ReissueTokenUseCase.ReissueCommand;
 import com.board.member.application.port.in.SignUpUseCase;
 import com.board.member.application.port.in.SignUpUseCase.SignUpCommand;
 import jakarta.validation.Valid;
@@ -20,6 +22,7 @@ public class AuthController {
 
     private final SignUpUseCase signUpUseCase;
     private final LoginUseCase loginUseCase;
+    private final ReissueTokenUseCase reissueTokenUseCase;
 
     @PostMapping("/signup")
     @ResponseStatus(HttpStatus.CREATED)
@@ -32,5 +35,11 @@ public class AuthController {
     public LoginResponse login(@Valid @RequestBody LoginRequest request) {
         LoginCommand command = new LoginCommand(request.email(), request.password());
         return LoginResponse.from(loginUseCase.login(command));
+    }
+
+    @PostMapping("/reissue")
+    public LoginResponse reissue(@Valid @RequestBody ReissueRequest request) {
+        ReissueCommand command = new ReissueCommand(request.refreshToken());
+        return LoginResponse.from(reissueTokenUseCase.reissue(command));
     }
 }

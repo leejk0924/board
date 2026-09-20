@@ -7,3 +7,4 @@ spring:
 jwt:
   secret: test-only-secret-key-used-for-integration-tests-32bytes-min
   expiration-seconds: 3600
+  refresh-expiration-seconds: 1209600

@@ -32,3 +32,4 @@ spring:
 jwt:
   secret: ${JWT_SECRET:local-development-only-secret-key-please-override-in-production-32bytes+}
   expiration-seconds: ${JWT_EXPIRATION_SECONDS:3600}
+  refresh-expiration-seconds: ${JWT_REFRESH_EXPIRATION_SECONDS:1209600}
