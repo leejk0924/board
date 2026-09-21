@@ -1,7 +1,7 @@
-package com.board.member.adapter.out.security;
+package com.board.auth.adapter.out.security;
 
+import com.board.auth.application.port.out.TokenIssuer;
 import com.board.common.security.jwt.JwtTokenProvider;
-import com.board.member.application.port.out.TokenIssuer;
 import java.security.SecureRandom;
 import java.util.Base64;
 import org.springframework.beans.factory.annotation.Value;

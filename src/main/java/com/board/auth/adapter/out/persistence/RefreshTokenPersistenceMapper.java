@@ -1,6 +1,6 @@
-package com.board.member.adapter.out.persistence;
+package com.board.auth.adapter.out.persistence;
 
-import com.board.member.domain.RefreshToken;
+import com.board.auth.domain.RefreshToken;
 
 final class RefreshTokenPersistenceMapper {
 

@@ -1,4 +1,4 @@
-package com.board.member.adapter.out.persistence;
+package com.board.auth.adapter.out.persistence;
 
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;

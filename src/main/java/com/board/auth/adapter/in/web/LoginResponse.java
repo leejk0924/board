@@ -1,7 +1,7 @@
-package com.board.member.adapter.in.web;
+package com.board.auth.adapter.in.web;
 
-import com.board.member.application.port.in.LoginUseCase.LoginResult;
-import com.board.member.application.port.in.ReissueTokenUseCase.ReissueResult;
+import com.board.auth.application.port.in.LoginUseCase.LoginResult;
+import com.board.auth.application.port.in.ReissueTokenUseCase.ReissueResult;
 
 public record LoginResponse(String accessToken, String refreshToken, String tokenType, long expiresIn) {
 

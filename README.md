@@ -55,14 +55,17 @@ docker compose up -d mysql
 
 - 이 프로젝트는 서버 렌더링 없는 순수 REST API이며, 프론트엔드/모바일 등 다양한 클라이언트가 붙을 수 있다고 가정했습니다. 세션은 서버가 상태를 들고 있어야 하고 스케일아웃 시 세션 클러스터링/스토리지 공유가 필요하지만, JWT는 서버가 무상태(stateless)로 동작할 수 있어 REST API에 더 적합하다고 판단했습니다.
 - 로그인 성공 시 Access Token(JWT, HS512, 기본 1시간 만료)과 Refresh Token(랜덤 opaque 문자열, 기본 14일 만료)을 함께 발급하고, 클라이언트는 이후 요청에 `Authorization: Bearer <accessToken>` 헤더를 실어 보냅니다.
-- **Refresh Token**: Access Token은 JWT라 서버가 검증만 하면 되지만(자체 완결적), 탈취 시 만료 전까지 무효화할 방법이 없습니다. 그래서 Refresh Token은 JWT가 아니라 `member.adapter.out.security.JwtTokenIssuerAdapter`가 `SecureRandom`으로 생성한 opaque 문자열로 만들고, DB(`refresh_token` 테이블, 회원당 1개)에 저장해 서버가 직접 유효성/폐기 여부를 관리합니다.
+- **Refresh Token**: Access Token은 JWT라 서버가 검증만 하면 되지만(자체 완결적), 탈취 시 만료 전까지 무효화할 방법이 없습니다. 그래서 Refresh Token은 JWT가 아니라 `auth.adapter.out.security.JwtTokenIssuerAdapter`가 `SecureRandom`으로 생성한 opaque 문자열로 만들고, DB(`refresh_token` 테이블, 회원당 1개)에 저장해 서버가 직접 유효성/폐기 여부를 관리합니다.
   - `POST /api/auth/reissue`에 `{ "refreshToken" }`을 보내면 DB에서 조회해 만료 여부를 확인하고, **재발급할 때마다 Access Token과 Refresh Token을 모두 새로 발급(로테이션)**하면서 기존 Refresh Token 행을 덮어씁니다. 그래서 한 번 사용된 Refresh Token은 즉시 무효화되어 재사용할 수 없습니다(탈취된 토큰이 재사용될 때 감지하기 쉬운 구조).
   - Access Token이 만료되어도 클라이언트는 재로그인 없이 Refresh Token으로 새 Access Token을 받아올 수 있습니다. Refresh Token 자체가 만료/유효하지 않으면 401과 함께 재로그인을 유도합니다.
 - `JwtAuthenticationFilter`가 매 요청마다 Access Token을 검증해 `SecurityContext`에 인증 정보를 채우고, 인증이 필요 없는 경로(`GET /api/posts/**`, `POST /api/auth/**`)는 `SecurityConfig`에서 `permitAll()` 처리했습니다.
 
 ### 2. 아키텍처: 헥사고날(포트 & 어댑터)
 
-`member`, `post`, `comment` 세 개의 모듈로 나누고, 각 모듈을 domain / application / adapter 3계층으로 구성했습니다.
+`member`, `auth`, `post`, `comment` 네 개의 모듈로 나누고, 각 모듈을 domain / application / adapter 3계층으로 구성했습니다.
+
+- `member`: 회원 자체(가입, 프로필 데이터)를 다룹니다. `Member` 도메인, `SignUpUseCase`만 가집니다.
+- `auth`: 인증(로그인, 토큰 발급/재발급)을 다룹니다. 처음에는 `member` 안에 로그인/RefreshToken을 같이 뒀었는데, "회원이 존재한다"는 사실과 "그 회원이 지금 로그인해 있다/세션을 유지한다"는 사실은 서로 다른 관심사라고 판단해 별도 모듈로 분리했습니다. `RefreshToken` 도메인, `LoginUseCase`/`ReissueTokenUseCase`를 가지며, 로그인 시 회원 자격 증명을 검증하기 위해 `member.application.port.out.MemberRepository`/`PasswordEncoder` 포트를 그대로 재사용합니다(auth → member로의 단방향 의존 — post/comment처럼 서로를 몰라야 하는 양방향 관계와는 다릅니다).
 
 ```
 <module>/
@@ -337,7 +340,7 @@ HTTP/1.1 404
 
 - [x] 대댓글(1단계) — 위 예시 참고
 - [x] 제목/본문 검색 — `GET /api/posts?keyword=`
-- [x] 단위 테스트 — `MemberAuthServiceTest`, `PostServiceTest`, `CommentServiceTest`(각 서비스를 port만 Mockito로 모킹해 Spring 컨텍스트 없이 검증), `PostTest`/`CommentTest`(도메인 객체 단위)
+- [x] 단위 테스트 — `MemberServiceTest`, `AuthServiceTest`, `PostServiceTest`, `CommentServiceTest`(각 서비스를 port만 Mockito로 모킹해 Spring 컨텍스트 없이 검증), `PostTest`/`CommentTest`(도메인 객체 단위)
 - [x] 통합 테스트 — `AuthIntegrationTest`(가입/로그인/400/401), `PostCommentIntegrationTest`(401/403/404, 목록 댓글수, 검색, 대댓글 제한, 삭제 cascade) — 둘 다 `com.board.integration` 패키지, Testcontainers MySQL + MockMvc로 실제 HTTP 계약을 검증
 
 ## 참고: Spring Boot 버전 관련 메모

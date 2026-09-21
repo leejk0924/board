@@ -8,8 +8,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.board.comment.adapter.in.web.CommentCreateRequest;
-import com.board.member.adapter.in.web.LoginRequest;
-import com.board.member.adapter.in.web.LoginResponse;
+import com.board.auth.adapter.in.web.LoginRequest;
+import com.board.auth.adapter.in.web.LoginResponse;
 import com.board.member.adapter.in.web.SignUpRequest;
 import com.board.post.adapter.in.web.PostCreateRequest;
 import com.board.post.adapter.in.web.PostResponse;

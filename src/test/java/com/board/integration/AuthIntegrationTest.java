@@ -5,9 +5,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.board.member.adapter.in.web.LoginRequest;
-import com.board.member.adapter.in.web.LoginResponse;
-import com.board.member.adapter.in.web.ReissueRequest;
+import com.board.auth.adapter.in.web.LoginRequest;
+import com.board.auth.adapter.in.web.LoginResponse;
+import com.board.auth.adapter.in.web.ReissueRequest;
 import com.board.member.adapter.in.web.SignUpRequest;
 import com.board.testSupport.AbstractIntegrationTest;
 import com.fasterxml.jackson.databind.ObjectMapper;

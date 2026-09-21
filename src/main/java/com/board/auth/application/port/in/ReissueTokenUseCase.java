@@ -1,4 +1,4 @@
-package com.board.member.application.port.in;
+package com.board.auth.application.port.in;
 
 public interface ReissueTokenUseCase {
 

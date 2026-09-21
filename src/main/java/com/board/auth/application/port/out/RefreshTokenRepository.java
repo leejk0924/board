@@ -1,6 +1,6 @@
-package com.board.member.application.port.out;
+package com.board.auth.application.port.out;
 
-import com.board.member.domain.RefreshToken;
+import com.board.auth.domain.RefreshToken;
 import java.util.Optional;
 
 public interface RefreshTokenRepository {

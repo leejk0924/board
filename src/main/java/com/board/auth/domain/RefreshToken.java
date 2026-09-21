@@ -1,4 +1,4 @@
-package com.board.member.domain;
+package com.board.auth.domain;
 
 import java.time.LocalDateTime;
 

@@ -1,4 +1,4 @@
-package com.board.member.application.port.out;
+package com.board.auth.application.port.out;
 
 public interface TokenIssuer {
 

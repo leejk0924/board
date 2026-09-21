@@ -1,4 +1,4 @@
-package com.board.member.adapter.out.persistence;
+package com.board.auth.adapter.out.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

@@ -1,7 +1,7 @@
-package com.board.member.adapter.out.persistence;
+package com.board.auth.adapter.out.persistence;
 
-import com.board.member.application.port.out.RefreshTokenRepository;
-import com.board.member.domain.RefreshToken;
+import com.board.auth.application.port.out.RefreshTokenRepository;
+import com.board.auth.domain.RefreshToken;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

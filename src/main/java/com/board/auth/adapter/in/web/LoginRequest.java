@@ -1,4 +1,4 @@
-package com.board.member.adapter.in.web;
+package com.board.auth.adapter.in.web;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
