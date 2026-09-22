@@ -7,29 +7,15 @@ Spring Boot + Spring Security 기반 게시판 REST API 서버입니다. 회원�
 ### 요구 사항
 
 - JDK 21
-- Docker / Docker Compose (MySQL 실행용)
-
-### 방법 1: Docker Compose 한 번에 실행 (앱 + DB)
+- Docker / Docker Compose
 
 ```bash
-docker compose up --build
+docker compose up -d
 ```
 
 - `http://localhost:8080` 으로 서버가 뜹니다.
 - 앱 컨테이너가 MySQL 컨테이너의 헬스체크 통과를 기다린 뒤 기동됩니다.
-
-### 방법 2: 로컬에서 앱만 직접 실행 (DB는 Docker)
-
-```bash
-# 1) MySQL만 기동
-docker compose up -d mysql
-
-# 2) 애플리케이션 실행 (dev 프로필, 기본값)
-./gradlew bootRun
-```
-
-- 실행 시 Flyway 마이그레이션(`src/main/resources/db/migration/V1__init_schema.sql`)이 자동으로 적용되어 스키마가 생성됩니다.
-- DB 접속 정보는 `src/main/resources/application-dev.yml`에 있습니다 (`localhost:3306/board`, `application/application`).
+- 실행 시 Flyway 마이그레이션(`src/main/resources/db/migration/`)이 자동으로 적용되어 스키마가 생성됩니다.
 
 ### 테스트 실행
 
@@ -333,16 +319,3 @@ $ curl -i -X GET http://localhost:8080/api/posts/1/comments
 HTTP/1.1 404
 {"status":404,"message":"게시글을 찾을 수 없습니다.", ...}
 ```
-
----
-
-## 가산점 구현 현황
-
-- [x] 대댓글(1단계) — 위 예시 참고
-- [x] 제목/본문 검색 — `GET /api/posts?keyword=`
-- [x] 단위 테스트 — `MemberServiceTest`, `AuthServiceTest`, `PostServiceTest`, `CommentServiceTest`(각 서비스를 port만 Mockito로 모킹해 Spring 컨텍스트 없이 검증), `PostTest`/`CommentTest`(도메인 객체 단위)
-- [x] 통합 테스트 — `AuthIntegrationTest`(가입/로그인/400/401), `PostCommentIntegrationTest`(401/403/404, 목록 댓글수, 검색, 대댓글 제한, 삭제 cascade) — 둘 다 `com.board.integration` 패키지, Testcontainers MySQL + MockMvc로 실제 HTTP 계약을 검증
-
-## 참고: Spring Boot 버전 관련 메모
-
-이 프로젝트는 `Spring Boot 4.1.1`을 사용합니다. 과제 요구 사항에는 `Spring Boot 3.x`로 명시되어 있으나, 이미 스캐폴딩된 프로젝트 설정을 유지하기로 결정했습니다. Spring Data JPA / Spring Security 기반 아키텍처와 요구사항 충족 여부는 버전과 무관하게 동일합니다.
