@@ -1,5 +1,8 @@
 package com.board.comment.adapter.in.web;
 
+import com.board.comment.adapter.in.web.dto.CommentCreateRequest;
+import com.board.comment.adapter.in.web.dto.CommentResponse;
+import com.board.comment.adapter.in.web.dto.CommentUpdateRequest;
 import com.board.comment.application.port.in.CreateCommentUseCase;
 import com.board.comment.application.port.in.CreateCommentUseCase.CreateCommentCommand;
 import com.board.comment.application.port.in.DeleteCommentUseCase;

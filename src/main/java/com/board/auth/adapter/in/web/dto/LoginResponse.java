@@ -1,4 +1,4 @@
-package com.board.auth.adapter.in.web;
+package com.board.auth.adapter.in.web.dto;
 
 import com.board.auth.application.port.in.LoginUseCase.LoginResult;
 import com.board.auth.application.port.in.ReissueTokenUseCase.ReissueResult;

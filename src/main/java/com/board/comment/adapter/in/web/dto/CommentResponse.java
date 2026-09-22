@@ -1,4 +1,4 @@
-package com.board.comment.adapter.in.web;
+package com.board.comment.adapter.in.web.dto;
 
 import com.board.comment.application.port.in.CommentResult;
 import java.time.LocalDateTime;

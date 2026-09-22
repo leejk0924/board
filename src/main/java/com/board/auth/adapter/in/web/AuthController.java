@@ -1,5 +1,8 @@
 package com.board.auth.adapter.in.web;
 
+import com.board.auth.adapter.in.web.dto.LoginRequest;
+import com.board.auth.adapter.in.web.dto.LoginResponse;
+import com.board.auth.adapter.in.web.dto.ReissueRequest;
 import com.board.auth.application.port.in.LoginUseCase;
 import com.board.auth.application.port.in.LoginUseCase.LoginCommand;
 import com.board.auth.application.port.in.ReissueTokenUseCase;

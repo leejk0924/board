@@ -7,13 +7,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.board.comment.adapter.in.web.CommentCreateRequest;
-import com.board.auth.adapter.in.web.LoginRequest;
-import com.board.auth.adapter.in.web.LoginResponse;
-import com.board.member.adapter.in.web.SignUpRequest;
-import com.board.post.adapter.in.web.PostCreateRequest;
-import com.board.post.adapter.in.web.PostResponse;
-import com.board.post.adapter.in.web.PostUpdateRequest;
+import com.board.auth.adapter.in.web.dto.LoginRequest;
+import com.board.auth.adapter.in.web.dto.LoginResponse;
+import com.board.comment.adapter.in.web.dto.CommentCreateRequest;
+import com.board.member.adapter.in.web.dto.SignUpRequest;
+import com.board.post.adapter.in.web.dto.PostCreateRequest;
+import com.board.post.adapter.in.web.dto.PostResponse;
+import com.board.post.adapter.in.web.dto.PostUpdateRequest;
 import com.board.testSupport.AbstractIntegrationTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;

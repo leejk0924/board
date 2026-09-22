@@ -1,4 +1,4 @@
-package com.board.member.adapter.in.web;
+package com.board.member.adapter.in.web.dto;
 
 import com.board.member.application.port.in.SignUpUseCase.MemberResult;
 import java.time.LocalDateTime;

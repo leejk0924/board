@@ -1,5 +1,7 @@
 package com.board.member.adapter.in.web;
 
+import com.board.member.adapter.in.web.dto.SignUpRequest;
+import com.board.member.adapter.in.web.dto.SignUpResponse;
 import com.board.member.application.port.in.SignUpUseCase;
 import com.board.member.application.port.in.SignUpUseCase.SignUpCommand;
 import jakarta.validation.Valid;

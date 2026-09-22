@@ -1,4 +1,4 @@
-package com.board.post.adapter.in.web;
+package com.board.post.adapter.in.web.dto;
 
 import com.board.post.application.port.in.GetPostListUseCase.PostSummaryResult;
 import java.time.LocalDateTime;

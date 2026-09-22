@@ -5,10 +5,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.board.auth.adapter.in.web.LoginRequest;
-import com.board.auth.adapter.in.web.LoginResponse;
-import com.board.auth.adapter.in.web.ReissueRequest;
-import com.board.member.adapter.in.web.SignUpRequest;
+import com.board.auth.adapter.in.web.dto.LoginRequest;
+import com.board.auth.adapter.in.web.dto.LoginResponse;
+import com.board.auth.adapter.in.web.dto.ReissueRequest;
+import com.board.member.adapter.in.web.dto.SignUpRequest;
 import com.board.testSupport.AbstractIntegrationTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;

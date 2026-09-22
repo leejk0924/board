@@ -1,4 +1,4 @@
-package com.board.post.adapter.in.web;
+package com.board.post.adapter.in.web.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
